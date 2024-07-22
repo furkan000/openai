@@ -200,10 +200,19 @@ public class EmbeddingTools : IEmbeddingTools, IEmbeddingToolsAdvanced
     /// <returns></returns>
     public IEnumerable<TextEmbeddingData> LoadFilesFromDirectory(string pathToDirectory)
     {
-        return !Path.Exists(pathToDirectory)
-            ? new List<TextEmbeddingData>()
-            : Directory.EnumerateFiles(pathToDirectory).Select(LoadFile).Where(r => r != null).ToList()!;
+        // Check if the directory exists
+        if (!Directory.Exists(pathToDirectory))
+        {
+            return new List<TextEmbeddingData>();
+        }
+
+        // If the directory exists, enumerate all files, load them, and filter out any null results
+        return Directory.EnumerateFiles(pathToDirectory)
+            .Select(LoadFile)
+            .Where(r => r != null)
+            .ToList()!;
     }
+
 
     /// <summary>
     ///     Writes the provided data to a CSV file at the specified file path.
@@ -212,7 +221,7 @@ public class EmbeddingTools : IEmbeddingTools, IEmbeddingToolsAdvanced
     {
         outputFilePath = Path.Combine(Path.GetTempPath(), outputFilePath);
         Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath) ?? string.Empty);
-        await using var writer = new StreamWriter(outputFilePath);
+        using var writer = new StreamWriter(outputFilePath);
         await using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
         await csv.WriteRecordsAsync((IEnumerable) textEmbeddingData);
         await csv.DisposeAsync();
@@ -342,7 +351,7 @@ public class EmbeddingTools : IEmbeddingTools, IEmbeddingToolsAdvanced
             throw new ArgumentException("Input text cannot be null or empty.", nameof(text));
         }
 
-        var sentences = text.Split(". ", StringSplitOptions.RemoveEmptyEntries);
+        var sentences = text.Split(new string[] { ". " }, StringSplitOptions.RemoveEmptyEntries);
 
         var chunks = new List<StringBuilder>();
         var currentChunk = new StringBuilder();
@@ -394,7 +403,7 @@ public class EmbeddingTools : IEmbeddingTools, IEmbeddingToolsAdvanced
         var distances = new PrimitiveDataFrameColumn<double>(EmbedStaticValues.Distances, embeddingsColumn.Length);
         for (var i = 0; i < embeddingsColumn.Length; i++)
         {
-            var rowEmbeddings = embeddingsColumn[i].ToString()!.Split(",").Select(Convert.ToDouble);
+            var rowEmbeddings = embeddingsColumn[i].ToString()!.Split(',').Select(Convert.ToDouble);
             distances[i] = Distance.Cosine(qEmbeddings.Select(x => x).ToArray(), Array.ConvertAll(rowEmbeddings.ToArray(), x => x));
         }
 

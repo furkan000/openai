@@ -59,7 +59,7 @@ public static class FunctionCallingHelper
 
                     var enumValues = string.IsNullOrEmpty(parameterDescriptionAttribute?.Enum)
                         ? Enum.GetNames(parameter.ParameterType).ToList()
-                        : parameterDescriptionAttribute.Enum.Split(",").Select(x => x.Trim()).ToList();
+                        : parameterDescriptionAttribute.Enum.Split(',').Select(x => x.Trim()).ToList();
 
                     definition =
                         PropertyDefinition.DefineEnum(enumValues, description);
@@ -161,11 +161,12 @@ public static class FunctionCallingHelper
             throw new InvalidFunctionCallException($"Method '{functionCall.Name}' on type '{obj.GetType()}' not found");
         }
 
-        if (!methodInfo.ReturnType.IsAssignableTo(typeof(T)))
+        if (!typeof(T).IsAssignableFrom(methodInfo.ReturnType))
         {
             throw new InvalidFunctionCallException(
                 $"Method '{functionCall.Name}' on type '{obj.GetType()}' has return type '{methodInfo.ReturnType}' but expected '{typeof(T)}'");
         }
+
 
         var parameters = methodInfo.GetParameters().ToList();
         var arguments = functionCall.ParseArguments();
